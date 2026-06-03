@@ -598,6 +598,14 @@ spec:
                               - value
                               type: object
                             type: array
+                          schemes:
+                            description: |-
+                              Schemes filters by the request's :scheme pseudo-header (e.g. "http",
+                              "https", or custom schemes used by gRPC/other protocols). Multiple
+                              entries are ORed. Matching is case-insensitive.
+                            items:
+                              type: string
+                            type: array
                         required:
                         - domains
                         type: object

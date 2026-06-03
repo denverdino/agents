@@ -419,6 +419,11 @@ func (in *RuleMatch) DeepCopyInto(out *RuleMatch) {
 		*out = make([]int32, len(*in))
 		copy(*out, *in)
 	}
+	if in.Schemes != nil {
+		in, out := &in.Schemes, &out.Schemes
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Headers != nil {
 		in, out := &in.Headers, &out.Headers
 		*out = make([]HeaderMatch, len(*in))

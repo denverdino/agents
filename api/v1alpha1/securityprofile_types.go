@@ -150,6 +150,11 @@ type RuleMatch struct {
 	// +kubebuilder:validation:items:Minimum=1
 	// +kubebuilder:validation:items:Maximum=65535
 	Ports []int32 `json:"ports,omitempty"`
+	// Schemes filters by the request's :scheme pseudo-header (e.g. "http",
+	// "https", or custom schemes used by gRPC/other protocols). Multiple
+	// entries are ORed. Matching is case-insensitive.
+	// +optional
+	Schemes []string `json:"schemes,omitempty"`
 	// Headers lists header matches; multiple entries are ANDed.
 	// +optional
 	Headers []HeaderMatch `json:"headers,omitempty"`
