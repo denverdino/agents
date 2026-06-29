@@ -22,9 +22,12 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	agentsv1alpha1 "github.com/openkruise/agents/api/v1alpha1"
 	infracache "github.com/openkruise/agents/pkg/cache"
 	"github.com/openkruise/agents/pkg/peers"
 	"github.com/openkruise/agents/pkg/proxy"
@@ -32,6 +35,7 @@ import (
 	"github.com/openkruise/agents/pkg/sandbox-manager/errors"
 	"github.com/openkruise/agents/pkg/sandbox-manager/infra"
 	"github.com/openkruise/agents/pkg/sandbox-manager/infra/sandboxcr"
+	"github.com/openkruise/agents/pkg/sandbox-manager/infra/substrate"
 )
 
 type GetInfraBuilderFunc func() (infra.Builder, error)
@@ -83,6 +87,36 @@ func (b *SandboxManagerBuilder) WithCustomInfra(builderFunc GetInfraBuilderFunc)
 	return b
 }
 
+func (b *SandboxManagerBuilder) WithSubstrateInfra(substrateAddr string) *SandboxManagerBuilder {
+	b.buildInfraFunc = func() (infra.Builder, error) {
+		substrateClient, err := substrate.NewSubstrateClient(context.Background(), substrateAddr)
+		if err != nil {
+			return nil, fmt.Errorf("connect to substrate at %s: %w", substrateAddr, err)
+		}
+
+		scheme := runtime.NewScheme()
+		utilruntime.Must(agentsv1alpha1.AddToScheme(scheme))
+		k8sClient, err := client.New(b.opts.RestConfig, client.Options{Scheme: scheme})
+		if err != nil {
+			return nil, fmt.Errorf("create K8s client for substrate template resolver: %w", err)
+		}
+		var sbsList agentsv1alpha1.SandboxSetList
+		if err := k8sClient.List(context.Background(), &sbsList); err != nil {
+			return nil, fmt.Errorf("list SandboxSets for substrate template resolver: %w", err)
+		}
+		sets := make([]*agentsv1alpha1.SandboxSet, 0, len(sbsList.Items))
+		for i := range sbsList.Items {
+			sets = append(sets, &sbsList.Items[i])
+		}
+
+		builder := substrate.NewSubstrateInfraBuilder(substrateAddr).
+			WithSubstrateClient(substrateClient).
+			WithSandboxSets(sets)
+		return builder, nil
+	}
+	return b
+}
+
 func (b *SandboxManagerBuilder) WithMemberlistPeers() *SandboxManagerBuilder {
 	b.getPeersFunc = func(args NewPeerArgs) (peers.Peers, error) {
 		if b.opts.PeerSelector == "" {
@@ -122,10 +156,11 @@ func (b *SandboxManagerBuilder) Build() (*SandboxManager, error) {
 		return nil, errors.NewError(errors.ErrorInternal, "failed to get infra builder: %v", err)
 	}
 	b.instance.infra = builder.Build()
-	reader := b.instance.infra.GetCache().GetAPIReader()
 
-	// Build peers manager
-	if b.getPeersFunc != nil {
+	// Build peers manager (requires a K8s API reader from the cache).
+	// Skip when there is no cache (e.g. substrate backend without K8s informers).
+	if b.getPeersFunc != nil && b.instance.infra.GetCache() != nil {
+		reader := b.instance.infra.GetCache().GetAPIReader()
 		peersManager, err := b.getPeersFunc(NewPeerArgs{apiReader: reader})
 		if err != nil {
 			return nil, errors.NewError(errors.ErrorInternal, "failed to get peers manager: %v", err)

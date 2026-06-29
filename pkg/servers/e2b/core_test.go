@@ -107,7 +107,7 @@ func SetupWithMinResumeTimeout(t *testing.T, minResumeTimeout int) (*Controller,
 			AdminKey:  InitKey,
 			Client:    fc,
 			APIReader: fc,
-		}, nil)
+		}, nil, "")
 
 	// Create test resources using the controller-runtime fake client
 	pod := &corev1.Pod{

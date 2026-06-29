@@ -85,6 +85,7 @@ func main() {
 	var memberlistBindPort int
 	var e2bKeyStorage string
 	var e2bKeyStorageDisableAutoMigrate bool
+	var substrateAddr string
 
 	utilfeature.DefaultMutableFeatureGate.AddFlag(pflag.CommandLine)
 
@@ -116,6 +117,7 @@ func main() {
 			"When --e2b-key-storage=mysql and auth is enabled, set MySQL DSN via environment variable "+E2BKeyStorageDSNEnvVar)
 	pflag.BoolVar(&e2bKeyStorageDisableAutoMigrate, "e2b-key-storage-disable-schema-auto-update", false,
 		"Disable schema auto-migration for DB-Based key storage like mysql; when enabled, schema changes are skipped but admin team/key bootstrap still runs")
+	pflag.StringVar(&substrateAddr, "substrate-addr", "", "Substrate control gRPC address (e.g. substrate-api:50051). When set, uses Substrate as the sandbox backend.")
 
 	opts := zap.Options{
 		Development: false,
@@ -221,7 +223,7 @@ func main() {
 	}
 
 	sandboxController := e2b.NewController(domain, sysNs, peerSelector, sandboxNamespace, sandboxLabelSelector, e2bMaxTimeout, e2bMinResumeTimeout, maxClaimWorkers, maxCreateQPS, uint32(extProcMaxConcurrency),
-		port, memberlistBindPort, keyCfg, clientConfig)
+		port, memberlistBindPort, keyCfg, clientConfig, substrateAddr)
 
 	if err := sandboxController.Init(); err != nil {
 		klog.Fatalf("Failed to initialize sandbox controller: %v", err)

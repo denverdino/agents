@@ -117,6 +117,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	recordSandboxSetMetrics(sbs)
 
+	if IsSubstrateBackend(sbs.Annotations) {
+		return r.reconcileSubstrate(ctx, sbs)
+	}
+
 	// Preparation
 	result, err := r.initNewStatus(ctx, sbs)
 	if err != nil {

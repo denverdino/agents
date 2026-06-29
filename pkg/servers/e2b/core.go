@@ -55,6 +55,7 @@ type Controller struct {
 	sandboxNamespace      string
 	memberlistBindPort    int
 	keyCfg                *keys.Config
+	substrateAddr         string
 
 	// fields
 	mux             *http.ServeMux
@@ -69,7 +70,7 @@ type Controller struct {
 }
 
 // NewController creates a new E2B Controller
-func NewController(domain, sysNs, peerSelector, sandboxNamespace, sandboxLabelSelector string, maxTimeout, minResumeTimeout, maxClaimWorkers, maxCreateQPS int, extProcMaxConcurrency uint32, port, memberlistBindPort int, keyCfg *keys.Config, clientConfig *rest.Config) *Controller {
+func NewController(domain, sysNs, peerSelector, sandboxNamespace, sandboxLabelSelector string, maxTimeout, minResumeTimeout, maxClaimWorkers, maxCreateQPS int, extProcMaxConcurrency uint32, port, memberlistBindPort int, keyCfg *keys.Config, clientConfig *rest.Config, substrateAddr string) *Controller {
 	sc := &Controller{
 		mux:                   http.NewServeMux(),
 		domain:                domain,
@@ -86,6 +87,7 @@ func NewController(domain, sysNs, peerSelector, sandboxNamespace, sandboxLabelSe
 		extProcMaxConcurrency: extProcMaxConcurrency,
 		memberlistBindPort:    memberlistBindPort,
 		keyCfg:                keyCfg,
+		substrateAddr:         substrateAddr,
 	}
 
 	sc.server = &http.Server{
@@ -103,12 +105,18 @@ func (sc *Controller) Init() error {
 	log.Info("init controller")
 	adapter := adapters.DefaultAdapterFactory(sc.port)
 
-	sandboxManager, err := sandboxmanager.NewSandboxManagerBuilder(sc.sandboxManagerOptions()).
-		WithSandboxInfra().
+	builder := sandboxmanager.NewSandboxManagerBuilder(sc.sandboxManagerOptions()).
 		WithMemberlistPeers().
-		WithRequestAdapter(adapter).
-		Build()
+		WithRequestAdapter(adapter)
 
+	if sc.substrateAddr != "" {
+		log.Info("using substrate backend", "addr", sc.substrateAddr)
+		builder = builder.WithSubstrateInfra(sc.substrateAddr)
+	} else {
+		builder = builder.WithSandboxInfra()
+	}
+
+	sandboxManager, err := builder.Build()
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,20 @@
+apiVersion: agents.kruise.io/v1alpha1
+kind: SandboxSet
+metadata:
+  name: substrate-test
+  namespace: ate-demo-counter
+  annotations:
+    agents.kruise.io/backend: substrate
+    substrate.agents.kruise.io/snapshots-location: "gs://ate-snapshots/substrate-test/"
+    substrate.agents.kruise.io/ateom-image: "localhost:5001/ateom-gvisor-715889664656de67e44382a8d6ab981d@sha256:4d77ac0a7a2b89c2d8c7a2c9737ba951a1fef3b35f1452fbd3c7670783aa25f5"
+    substrate.agents.kruise.io/sandbox-class: gvisor
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.10.2@sha256:f548e0e8e3dc1896ca956272154dde3314e8cc4fde0a57577ee9fa1c63f5baf4
+        - name: counter
+          image: localhost:5001/counter-7b2c368808ac33f45c7ab87955715526@sha256:9a8da970bbebb6a5496f046d3649295ed67df32f6cbed2b2b1ca5601ffdd7d2d
+          command: ["/ko-app/counter"]

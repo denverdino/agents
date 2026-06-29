@@ -26,6 +26,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"k8s.io/klog/v2"
 
@@ -141,7 +142,14 @@ func (sc *Controller) ListSandboxes(r *http.Request) (web.ApiResponse[[]*models.
 		NextToken: request.NextToken,
 		Filter:    getListFilter(request),
 		GetKey: func(sbx infra.Sandbox) string {
-			return sbx.GetAnnotations()[agentsv1alpha1.AnnotationClaimTime]
+			if t := sbx.GetAnnotations()[agentsv1alpha1.AnnotationClaimTime]; t != "" {
+				return t
+			}
+			ct, _ := sbx.GetClaimTime()
+			if !ct.IsZero() {
+				return ct.Format(time.RFC3339)
+			}
+			return sbx.GetSandboxID()
 		},
 	})
 	var headers map[string]string

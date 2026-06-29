@@ -43,6 +43,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	atev1alpha1 "github.com/agent-substrate/substrate/pkg/api/v1alpha1"
 	agentsv1alpha1 "github.com/openkruise/agents/api/v1alpha1"
 	"github.com/openkruise/agents/client"
 	"github.com/openkruise/agents/pkg/controller"
@@ -65,6 +66,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(agentsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(atev1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
