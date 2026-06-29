@@ -158,7 +158,7 @@ func (g *JobGenerator) GenerateCommitJob() (*batchv1.Job, error) {
 
 	rootUID := int64(0)
 	trueVal := true
-	backoff := int32(backoffLimit)
+	backoff := int32(backoffLimit) // #nosec G115 -- backoffLimit is a small constant
 
 	// Map CommitSpec.TimeoutSeconds to Job's ActiveDeadlineSeconds
 	var activeDeadlineSeconds *int64

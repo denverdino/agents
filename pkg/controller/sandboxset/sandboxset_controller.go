@@ -194,8 +194,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			start = time.Now()
 			updateInfo := calculateUpdateInfo(sbs, updateGroups)
 			// Update status with update progress
-			newStatus.UpdatedReplicas = int32(updateInfo.CurrentUpdated)
-			newStatus.UpdatedAvailableReplicas = int32(len(updateGroups.UpdatedAvailable))
+			newStatus.UpdatedReplicas = int32(updateInfo.CurrentUpdated)                   // #nosec G115 -- K8s object count
+			newStatus.UpdatedAvailableReplicas = int32(len(updateGroups.UpdatedAvailable)) // #nosec G115 -- K8s object count
 
 			if !isUpdateComplete(updateInfo) {
 				log.Info("performing rolling update", "toUpdate", updateInfo.ToUpdate)

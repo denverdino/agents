@@ -451,7 +451,7 @@ func pickFromCandidates(ctx context.Context, candidates []*v1alpha1.Sandbox, pic
 	if len(candidates) == 0 {
 		return nil, errors.New("no candidate")
 	}
-	start := rand.IntN(len(candidates))
+	start := rand.IntN(len(candidates)) // #nosec G404 -- non-security random for load distribution
 	i := start
 	for {
 		// Check if context is canceled
